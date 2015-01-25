@@ -1,0 +1,20 @@
+#EXTM3U
+#EXT-X-TWITCH-INFO:NODE="video3.fra01",MANIFEST-NODE="video3.fra01",SERVER-TIME="1419331846.97",USER-IP="217.77.80.29",CLUSTER="fra01",MANIFEST-CLUSTER="fra01"
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1971601,RESOLUTION=1280x720,CODECS="avc1.4D4029,mp4a.40.2",VIDEO="chunked"
+http://video3.fra01.hls.twitch.tv/hls106/nl_kripp_12302235760_179638082/chunked/py-index-live.m3u8?token=id=6302816019504334518,bid=12302235760,exp=1419418246,node=video3-1.fra01.hls.justin.tv,nname=video3.fra01,fmt=chunked&sig=412fe18162a54cc4060a3199166801bf8465a38c
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="high",NAME="High",AUTOSELECT=YES,DEFAULT=YES
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1760000,CODECS="avc1.66.31,mp4a.40.2",VIDEO="high"
+http://video3.fra01.hls.twitch.tv/hls106/nl_kripp_12302235760_179638082/high/py-index-live.m3u8?token=id=6302816019504334518,bid=12302235760,exp=1419418246,node=video3-1.fra01.hls.justin.tv,nname=video3.fra01,fmt=high&sig=47a7fbfc180e1eed7414cf71c3273a815733eb69
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="medium",NAME="Medium",AUTOSELECT=YES,DEFAULT=YES
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=928000,CODECS="avc1.66.31,mp4a.40.2",VIDEO="medium"
+http://video3.fra01.hls.twitch.tv/hls106/nl_kripp_12302235760_179638082/medium/py-index-live.m3u8?token=id=6302816019504334518,bid=12302235760,exp=1419418246,node=video3-1.fra01.hls.justin.tv,nname=video3.fra01,fmt=medium&sig=005e6141a1b3bc27113d9c41e10de42b65c3edf2
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="low",NAME="Low",AUTOSELECT=YES,DEFAULT=YES
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=596000,CODECS="avc1.66.31,mp4a.40.2",VIDEO="low"
+http://video3.fra01.hls.twitch.tv/hls106/nl_kripp_12302235760_179638082/low/py-index-live.m3u8?token=id=6302816019504334518,bid=12302235760,exp=1419418246,node=video3-1.fra01.hls.justin.tv,nname=video3.fra01,fmt=low&sig=79c27c28cb5eaeeef95f22f7bb724d1261c638d2
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="mobile",NAME="Mobile",AUTOSELECT=YES,DEFAULT=YES
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=164000,CODECS="avc1.66.31,mp4a.40.2",VIDEO="mobile"
+http://video3.fra01.hls.twitch.tv/hls106/nl_kripp_12302235760_179638082/mobile/py-index-live.m3u8?token=id=6302816019504334518,bid=12302235760,exp=1419418246,node=video3-1.fra01.hls.justin.tv,nname=video3.fra01,fmt=mobile&sig=bb7dcd62b5d42c99abdc4bf47d1d659978e4579e
+#EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="audio_only",NAME="Audio Only",AUTOSELECT=NO,DEFAULT=NO
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=128000,CODECS="mp4a.40.2",VIDEO="audio_only"
+http://video3.fra01.hls.twitch.tv/hls106/nl_kripp_12302235760_179638082/audio_only/py-index-live.m3u8?token=id=6302816019504334518,bid=12302235760,exp=1419418246,node=video3-1.fra01.hls.justin.tv,nname=video3.fra01,fmt=audio_only&sig=3134424c58c16f6bddfa0c07d01c7e9002e9edcb
