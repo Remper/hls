@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
  * Duration is decimal
  * Title is an unquoted string
  */
+@HLSTag(name="EXTINF")
 public class ExtInfTag implements Tag {
     protected String title;
     protected float duration;

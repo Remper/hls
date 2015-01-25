@@ -72,7 +72,7 @@ public class MasterPlaylist extends Playlist {
      *
      * @return List of the elements
      */
-    public List<MediaPlaylist> getElements() {
+    public ArrayList<MediaPlaylist> getElements() {
         return isValid() ? elements : new ArrayList<>();
     }
 

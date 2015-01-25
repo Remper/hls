@@ -35,12 +35,12 @@ public class PlaylistParser {
         return version;
     }
 
-    public Playlist parseMaster(String playlistStr) throws IllegalTagSequence {
-        return parse(new MasterPlaylist(), playlistStr);
+    public MasterPlaylist parseMaster(String playlistStr) throws IllegalTagSequence {
+        return (MasterPlaylist) parse(new MasterPlaylist(), playlistStr);
     }
 
-    public Playlist parseTwitchMaster(String playlistStr) throws IllegalTagSequence {
-        return parse(new org.fbk.cit.hlt.parsers.hls.extensions.twitchtv.MasterPlaylist(), playlistStr);
+    public MasterPlaylist parseTwitchMaster(String playlistStr) throws IllegalTagSequence {
+        return (MasterPlaylist) parse(new org.fbk.cit.hlt.parsers.hls.extensions.twitchtv.MasterPlaylist(), playlistStr);
     }
 
     /**

@@ -5,7 +5,7 @@ import org.fbk.cit.hlt.parsers.hls.tags.*;
 /**
  * #EXT-X-PLAYLIST-TYPE
  */
-@HLSTag(name = "EXT-X-PLAYLIST-TYPE")
+@HLSTag(name="EXT-X-PLAYLIST-TYPE")
 public class PlaylistTypeTag implements Tag {
     protected MediaPlaylistType playlistType;
 
