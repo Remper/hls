@@ -34,7 +34,7 @@ public class TagFactory {
         if (tagDelimiter == -1) {
             tagName = tagString.substring(1);
         } else {
-            tagName = tagString.substring(1, tagDelimiter-1);
+            tagName = tagString.substring(1, tagDelimiter);
             tagProperties = tagString.substring(tagDelimiter+1);
         }
         
@@ -42,7 +42,7 @@ public class TagFactory {
         Tag tag;
         Class<?> tagClass = getTags().get(tagName);
         if (tagClass == null) {
-            throw new InvalidTagString("Tag with this name not found");
+            throw new InvalidTagString("Tag with this name not found: " + tagName);
         }
         try {
             tag = (Tag) tagClass.getConstructor(String.class).newInstance(tagProperties);

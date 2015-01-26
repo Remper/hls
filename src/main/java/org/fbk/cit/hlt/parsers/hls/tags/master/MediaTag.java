@@ -15,9 +15,9 @@ public class MediaTag extends TagWithAttributeList implements Tag {
     protected String language;
     protected String assocLanguage;
     protected String name;
-    protected boolean isDefault = false;
-    protected boolean autoselect = false;
-    protected boolean isForced = false;
+    protected boolean isDefault;
+    protected boolean autoselect;
+    protected boolean isForced;
 
     public MediaTag(String propertyString) throws InvalidTagParameters {
         super(propertyString);

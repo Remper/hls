@@ -30,7 +30,7 @@ public class PlaylistParserTest {
         Assert.assertArrayEquals("Arrays should be equal", cleanLines.toArray(), lines.toArray());
     }
     
-    //@Test
+    @Test
     public void testMasterPlaylistParsing() throws Exception {
         String cleanMasterPl = getStringResource("/clean_master_playlist1.m3u");
         MasterPlaylist master = defaultParser.parseTwitchMaster(cleanMasterPl);

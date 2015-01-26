@@ -7,6 +7,8 @@ import org.fbk.cit.hlt.parsers.hls.tags.*;
  */
 @HLSTag(name="EXTM3U")
 public class OpeningTag implements Tag {
+    public OpeningTag(String paramString) {}
+    
     @Override
     public String getName() {
         return "EXTM3U";

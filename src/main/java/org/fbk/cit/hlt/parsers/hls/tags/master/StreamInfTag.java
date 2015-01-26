@@ -3,15 +3,18 @@ package org.fbk.cit.hlt.parsers.hls.tags.master;
 import org.fbk.cit.hlt.parsers.hls.MediaType;
 import org.fbk.cit.hlt.parsers.hls.exceptions.InvalidTagParameters;
 import org.fbk.cit.hlt.parsers.hls.tags.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * #EXT-X-STREAM-INF
  */
 @HLSTag(name="EXT-X-STREAM-INF")
 public class StreamInfTag extends TagWithAttributeList implements Tag {
-    protected long bandwidth = 0;
-    protected long averageBandwidth = 0;
-    protected String codecs = "";
+    protected static final Logger logger = LoggerFactory.getLogger(StreamInfTag.class);
+    protected long bandwidth;
+    protected long averageBandwidth;
+    protected String codecs;
     protected Resolution resolution;
     protected MediaType mediaType;
     protected String groupId;
@@ -27,6 +30,9 @@ public class StreamInfTag extends TagWithAttributeList implements Tag {
         if (mediaType == null) {
             throw InvalidTagParameters.required("VIDEO or AUDIO or SUBTITLES or CLOSED-CAPTIONS");
         }
+        if (codecs == null) {
+            codecs = "";
+        }
     }
 
     protected void resolveParameter(String name, long number) throws InvalidTagParameters {
@@ -36,6 +42,9 @@ public class StreamInfTag extends TagWithAttributeList implements Tag {
                 return;
             case "AVERAGE-BANDWIDTH":
                 averageBandwidth = number;
+                return;
+            case "PROGRAM-ID":
+                logger.warn("Integer parameter PROGRAM-ID shouldn't be used for tag "+this.getName());
                 return;
         }
 
@@ -53,12 +62,16 @@ public class StreamInfTag extends TagWithAttributeList implements Tag {
                 throw new InvalidTagParameters("Invalid parameter name for a string parameter: \"" + name + "\"");
             case "AUDIO":
                 mediaType = MediaType.AUDIO;
+                break;
             case "VIDEO":
                 mediaType = MediaType.VIDEO;
+                break;
             case "SUBTITLES":
                 mediaType = MediaType.SUBTITLES;
+                break;
             case "CLOSED-CAPTIONS":
                 mediaType = MediaType.CLOSED_CAPTIONS;
+                break;
         }
         groupId = string;
     }
