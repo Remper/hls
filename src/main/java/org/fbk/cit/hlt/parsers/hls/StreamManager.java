@@ -17,10 +17,10 @@ import java.util.*;
 public class StreamManager implements DownloaderListener {
     protected URI uri;
     protected String label;
-    protected Downloader downloader;
+    protected Downloader downloader = new SimpleDownloader();
     protected Logger logger = LoggerFactory.getLogger(StreamManager.class);
     protected PlaylistParser parser = new PlaylistParser();
-    protected long nextJobId = 0;
+    protected long nextJobId = 1;
     protected int dropCount = 5;
     protected int maxDropCount = 5;
     protected MasterPlaylist playlist;
@@ -28,6 +28,9 @@ public class StreamManager implements DownloaderListener {
     
     HashMap<Long, Pair<JobType, Downloadable>> jobs = new HashMap<>();
     HashSet<Integer> downloadedSegments = new HashSet<>();
+    
+    public static final int HIGH_PRIORITY = 241;
+    public static final int LOW_PRIORITY = 0;
     
     /**
      * Create a stream manager
@@ -99,9 +102,16 @@ public class StreamManager implements DownloaderListener {
                 return;
             }
             jobs.put(jobId, new Pair<>(JobType.MEDIA, currentMedia));
-            downloader.download(jobId, currentMediaUri);
-            while (jobId != downloader.waitUntilEvent()) {
-                //Wait until we catch our Media event
+            downloader.download(jobId, currentMediaUri, HIGH_PRIORITY);
+            try {
+                while (jobId != downloader.waitUntilEvent()) {
+                    //Wait until we catch our Media event
+                }
+            } catch (Exception e) {
+                //If something happened with our queue, we should halt
+                e.printStackTrace();
+                logger.warn("["+label+"] Halting due to Downloader failure: "+dropCount);
+                return;
             }
 
             //Trying again on error
@@ -140,11 +150,15 @@ public class StreamManager implements DownloaderListener {
 
         logger.info("["+label+"] Downloading halted. Downloaded "+downloadedSegments.size()+" segments");
     }
-    
+
     private void submitJob(JobType type, Playlist playlist, URI uri) {
+        submitJob(type, playlist, uri, LOW_PRIORITY);
+    }
+    
+    private void submitJob(JobType type, Playlist playlist, URI uri, int priority) {
         long jobId = getNextJobId();
         jobs.put(jobId, new Pair<>(type, playlist));
-        downloader.download(jobId, uri);
+        downloader.download(jobId, uri, priority);
     }
 
     @Override

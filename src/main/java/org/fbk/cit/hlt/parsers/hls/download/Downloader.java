@@ -7,8 +7,8 @@ import java.net.URI;
  * execute tasks provided by StreamManager 
  */
 public interface Downloader {
-    public byte[] download(long jobId, URI uri);
-    public byte[] download(long jobId, URI uri, int priority);
+    public void download(long jobId, URI uri);
+    public void download(long jobId, URI uri, int priority);
     public void subscribe(DownloaderListener listener);
     public void unsubscribe(DownloaderListener listener);
     public long waitUntilEvent();
