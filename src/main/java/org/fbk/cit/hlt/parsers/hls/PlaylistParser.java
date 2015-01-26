@@ -65,7 +65,7 @@ public class PlaylistParser {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            throw new IllegalTagSequence();
         }
 
         return playlist;

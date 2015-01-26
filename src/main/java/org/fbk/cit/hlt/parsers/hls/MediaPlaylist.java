@@ -10,9 +10,9 @@ import java.util.ArrayList;
 /**
  * Media playlist entity
  */
-public class MediaPlaylist extends Playlist {
-    public int currentSequence;
-    public int currentDiscontinuity;
+public class MediaPlaylist extends Playlist implements Cloneable {
+    protected int currentSequence;
+    protected int currentDiscontinuity;
     protected ArrayList<Segment> segments;
     protected String baseURI;
     protected MediaPlaylistType type;
@@ -27,14 +27,12 @@ public class MediaPlaylist extends Playlist {
     protected String description;
     protected float targetDuration;
     protected boolean isSealed;
+    protected int startingSequence;
 
     public MediaPlaylist(String baseURI, MediaType mediaType, String groupId) {
         super();
         this.baseURI = baseURI;
         segments = new ArrayList<>();
-        currentSequence = 0;
-        currentDiscontinuity = 0;
-        isSealed = false;
         this.mediaType = mediaType;
         this.groupId = groupId;
     }
@@ -65,6 +63,7 @@ public class MediaPlaylist extends Playlist {
                 throw new IllegalTagSequence("New Media Sequence shouldn't be less than current");
             }
             currentSequence = newSequence;
+            startingSequence = currentSequence;
             return;
         }
 
@@ -175,5 +174,30 @@ public class MediaPlaylist extends Playlist {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getStartingSequence() {
+        return startingSequence;
+    }
+
+    public int getCurrentSequence() {
+        return currentSequence;
+    }
+
+    public String getBaseURI() {
+        return baseURI;
+    }
+
+    public boolean isSealed() {
+        return isSealed;
+    }
+
+    @Override
+    public MediaPlaylist clone() throws CloneNotSupportedException {
+        MediaPlaylist cloned = (MediaPlaylist) super.clone();
+        cloned.segments = new ArrayList<>();
+        cloned.resolution = resolution.clone();
+
+        return cloned;
     }
 }

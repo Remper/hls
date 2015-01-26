@@ -1,5 +1,6 @@
 package org.fbk.cit.hlt.parsers.hls;
 
+import org.fbk.cit.hlt.parsers.hls.download.Downloadable;
 import org.fbk.cit.hlt.parsers.hls.tags.general.OpeningTag;
 import org.fbk.cit.hlt.parsers.hls.exceptions.*;
 import org.fbk.cit.hlt.parsers.hls.tags.Tag;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 /**
  * Generic playlist entity
  */
-public abstract class Playlist {
+public abstract class Playlist implements Downloadable {
     protected int version;
     protected ArrayList<Tag> tags;
     protected boolean awaitingURI;

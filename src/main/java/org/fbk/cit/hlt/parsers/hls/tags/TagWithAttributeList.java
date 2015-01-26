@@ -73,9 +73,14 @@ public abstract class TagWithAttributeList {
         throw new InvalidTagParameters("Invalid parameter name for a resolution parameter: \"" + name + "\"");
     }
 
-    public static class Resolution {
+    public static class Resolution implements Cloneable {
         int width;
         int height;
         public Resolution(int width, int height) {this.width = width; this.height = height;}
+
+        @Override
+        public Resolution clone() throws CloneNotSupportedException {
+            return (Resolution) super.clone();
+        }
     }
 }

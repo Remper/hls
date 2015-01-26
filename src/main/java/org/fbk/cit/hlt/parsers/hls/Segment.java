@@ -1,11 +1,12 @@
 package org.fbk.cit.hlt.parsers.hls;
 
+import org.fbk.cit.hlt.parsers.hls.download.Downloadable;
 import org.fbk.cit.hlt.parsers.hls.tags.Encryption;
 
 /**
  * Media Sequence or any other media file
  */
-public class Segment {
+public class Segment implements Downloadable {
     private float duration;
     private String title;
     private String uri;
