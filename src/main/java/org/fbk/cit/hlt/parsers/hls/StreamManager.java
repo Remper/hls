@@ -1,6 +1,7 @@
 package org.fbk.cit.hlt.parsers.hls;
 
 import javafx.util.Pair;
+import org.apache.commons.cli.*;
 import org.fbk.cit.hlt.parsers.hls.download.*;
 import org.fbk.cit.hlt.parsers.hls.exceptions.IllegalTagSequence;
 import org.slf4j.Logger;
@@ -17,20 +18,24 @@ import java.util.*;
 public class StreamManager implements DownloaderListener {
     protected URI uri;
     protected String label;
-    protected Downloader downloader = new SimpleDownloader();
+    protected Downloader downloader;
     protected Logger logger = LoggerFactory.getLogger(StreamManager.class);
     protected PlaylistParser parser = new PlaylistParser();
     protected long nextJobId = 1;
     protected int dropCount = 5;
-    protected int maxDropCount = 5;
     protected MasterPlaylist playlist;
     protected MediaPlaylist media;
     
-    HashMap<Long, Pair<JobType, Downloadable>> jobs = new HashMap<>();
-    HashSet<Integer> downloadedSegments = new HashSet<>();
-    
+    protected HashMap<Long, Pair<JobType, Downloadable>> jobs = new HashMap<>();
+    protected HashSet<Integer> downloadedSegments = new HashSet<>();
+
+    protected enum JobType {
+        MASTER, MEDIA, SEGMENT
+    }
+
     public static final int HIGH_PRIORITY = 241;
     public static final int LOW_PRIORITY = 0;
+    public static final int MAX_DROP_COUNT = 5;
     
     /**
      * Create a stream manager
@@ -41,13 +46,13 @@ public class StreamManager implements DownloaderListener {
     public StreamManager(String uri) throws URISyntaxException {
         this.uri = new URI(uri);
         this.label = uri;
+        this.setDownloader(new SimpleDownloader());
     }
     
     public void reset() {
         playlist = null;
         media = null;
-        dropCount = maxDropCount;
-        nextJobId = 0;
+        dropCount = MAX_DROP_COUNT;
         jobs.clear();
         downloadedSegments.clear();
     }
@@ -133,16 +138,22 @@ public class StreamManager implements DownloaderListener {
                 URI currentUri = null;
                 try {
                     currentUri = new URI(segment.getUri());
+                    if (!currentUri.isAbsolute()) {
+                        currentUri = currentMediaUri.resolve(currentUri);
+                    }
                 } catch (URISyntaxException e) {
                     logger.warn("["+label+"] Can't parse URI for segment #"+segment.getSequence());
                     continue;
                 }
-                submitJob(JobType.SEGMENT, media, currentUri);
+                submitJob(JobType.SEGMENT, segment, currentUri);
             }
 
+            //Clearing media, because now it is obsolete
+            long sleepDuration = Math.round(media.getTargetDuration()*500);
+            media = null;
             try {
                 //Sleeping for half of the target duration
-                Thread.sleep(Math.round(media.getTargetDuration()*500));
+                Thread.sleep(sleepDuration);
             } catch (InterruptedException e) {
                 //Sleep interruption is fine for us
             }
@@ -151,14 +162,18 @@ public class StreamManager implements DownloaderListener {
         logger.info("["+label+"] Downloading halted. Downloaded "+downloadedSegments.size()+" segments");
     }
 
-    private void submitJob(JobType type, Playlist playlist, URI uri) {
-        submitJob(type, playlist, uri, LOW_PRIORITY);
+    private void submitJob(JobType type, Downloadable dwn, URI uri) {
+        submitJob(type, dwn, uri, LOW_PRIORITY);
     }
     
-    private void submitJob(JobType type, Playlist playlist, URI uri, int priority) {
+    private void submitJob(JobType type, Downloadable dwn, URI uri, int priority) {
         long jobId = getNextJobId();
-        jobs.put(jobId, new Pair<>(type, playlist));
+        jobs.put(jobId, new Pair<>(type, dwn));
         downloader.download(jobId, uri, priority);
+    }
+
+    private long getNextJobId() {
+        return nextJobId++;
     }
 
     @Override
@@ -171,6 +186,7 @@ public class StreamManager implements DownloaderListener {
                     playlist = parser.parseTwitchMaster(new String(result));
                 } catch (IllegalTagSequence illegalTagSequence) {
                     logger.warn("[" + label + "] Parsing failed for Master Playlist");
+                    dropCount--;
                     return;
                 }
                 break;
@@ -179,17 +195,19 @@ public class StreamManager implements DownloaderListener {
                     media = (MediaPlaylist) parser.parse((Playlist) job.getValue(), new String(result));
                 } catch (IllegalTagSequence illegalTagSequence) {
                     logger.warn("[" + label + "] Parsing failed for Media Playlist");
+                    dropCount--;
                     return;
                 }
                 break;
             case SEGMENT:
                 Segment segment = (Segment) job.getValue();
                 downloadedSegments.add(segment.getSequence());
+                logger.info("[" + label + "] downloaded segment #" + segment.getSequence());
                 break;
         }
         
         //Restore the amount of allowed failures
-        if (dropCount < maxDropCount) {
+        if (dropCount < MAX_DROP_COUNT) {
             dropCount++;
         }
     }
@@ -217,14 +235,6 @@ public class StreamManager implements DownloaderListener {
         this.logger = logger;
     }
 
-    protected enum JobType {
-        MASTER, MEDIA, SEGMENT
-    }
-    
-    private long getNextJobId() {
-        return nextJobId++;
-    }
-
     public Downloader getDownloader() {
         return downloader;
     }
@@ -235,5 +245,37 @@ public class StreamManager implements DownloaderListener {
         }
         this.downloader = downloader;
         this.downloader.subscribe(this);
+    }
+    
+    public static void main(String args[]) {
+        //Options specification
+        Options options = new Options();
+        options.addOption("u", "url", true, "URL of the Master Playlist to download");
+        options.addOption("l", "label", true, "Convenient label of the stream");
+        
+        CommandLineParser parser = new PosixParser();
+        CommandLine line;
+        StreamManager manager;
+        try {
+            line = parser.parse(options, args);
+            if (!line.hasOption("url")) {
+                throw new ParseException("Missing parameter url");
+            }
+
+            try {
+                manager = new StreamManager(line.getOptionValue("url"));
+            } catch (URISyntaxException e) {
+                throw new ParseException("Malformed url");
+            }
+        } catch (ParseException e) {
+            String footer = "\nError: "+e.getMessage();
+            new HelpFormatter().printHelp(400, "<whatever>", "\n", options, footer, true);
+            return;
+        }
+
+        if (line.hasOption("label")) {
+            manager.setLabel(line.getOptionValue("label"));
+        }
+        manager.start(MediaType.VIDEO);
     }
 }
