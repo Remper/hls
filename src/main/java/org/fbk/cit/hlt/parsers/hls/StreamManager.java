@@ -4,9 +4,13 @@ import javafx.util.Pair;
 import org.apache.commons.cli.*;
 import org.fbk.cit.hlt.parsers.hls.download.*;
 import org.fbk.cit.hlt.parsers.hls.exceptions.IllegalTagSequence;
+import org.fbk.cit.hlt.parsers.hls.persist.FilePersister;
+import org.fbk.cit.hlt.parsers.hls.persist.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -19,6 +23,7 @@ public class StreamManager implements DownloaderListener {
     protected URI uri;
     protected String label;
     protected Downloader downloader;
+    protected Persister persister;
     protected Logger logger = LoggerFactory.getLogger(StreamManager.class);
     protected PlaylistParser parser = new PlaylistParser();
     protected long nextJobId = 1;
@@ -27,6 +32,7 @@ public class StreamManager implements DownloaderListener {
     protected MediaPlaylist media;
     
     protected HashMap<Long, Pair<JobType, Downloadable>> jobs = new HashMap<>();
+    protected HashMap<Integer, Segment> segments = new HashMap<>();
     protected HashSet<Integer> downloadedSegments = new HashSet<>();
 
     protected enum JobType {
@@ -43,7 +49,8 @@ public class StreamManager implements DownloaderListener {
      * @param uri a URI to a Master Playlist
      * @throws URISyntaxException
      */
-    public StreamManager(String uri) throws URISyntaxException {
+    public StreamManager(Persister persister, String uri) throws URISyntaxException {
+        this.persister = persister;
         this.uri = new URI(uri);
         this.label = uri;
         this.setDownloader(new SimpleDownloader());
@@ -133,18 +140,23 @@ public class StreamManager implements DownloaderListener {
                 logger.info("["+label+"] Downloaded Media Playlist. Segments from "+media.getStartingSequence()+" to "+media.getCurrentSequence());
             }
             
+            
+            
             //Adding all the segments to job queue
             for (Segment segment : segments) {
                 URI currentUri = null;
                 try {
                     currentUri = new URI(segment.getUri());
+                    //Resolve URL for segment, if it is relative
                     if (!currentUri.isAbsolute()) {
                         currentUri = currentMediaUri.resolve(currentUri);
+                        segment.setUri(currentUri.toString());
                     }
                 } catch (URISyntaxException e) {
                     logger.warn("["+label+"] Can't parse URI for segment #"+segment.getSequence());
                     continue;
                 }
+                this.segments.put(segment.getSequence(), segment);
                 submitJob(JobType.SEGMENT, segment, currentUri);
             }
 
@@ -183,6 +195,11 @@ public class StreamManager implements DownloaderListener {
         switch (job.getKey()) {
             case MASTER:
                 try {
+                    try {
+                        persister.savePlaylist("master", result);
+                    } catch (IOException e) {
+                        logger.warn("[" + label + "] Master Playlist save failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+                    }
                     playlist = parser.parseTwitchMaster(new String(result));
                 } catch (IllegalTagSequence illegalTagSequence) {
                     logger.warn("[" + label + "] Parsing failed for Master Playlist");
@@ -192,6 +209,11 @@ public class StreamManager implements DownloaderListener {
                 break;
             case MEDIA:
                 try {
+                    try {
+                        persister.savePlaylist("media", result);
+                    } catch (IOException e) {
+                        logger.warn("[" + label + "] Media Playlist save failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+                    }
                     media = (MediaPlaylist) parser.parse((Playlist) job.getValue(), new String(result));
                 } catch (IllegalTagSequence illegalTagSequence) {
                     logger.warn("[" + label + "] Parsing failed for Media Playlist");
@@ -203,6 +225,11 @@ public class StreamManager implements DownloaderListener {
                 Segment segment = (Segment) job.getValue();
                 downloadedSegments.add(segment.getSequence());
                 logger.info("[" + label + "] downloaded segment #" + segment.getSequence());
+                try {
+                    persister.saveSegment(segment.getSequence(), result);
+                } catch (IOException e) {
+                    logger.warn("[" + label + "] Segment save failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+                }
                 break;
         }
         
@@ -215,7 +242,7 @@ public class StreamManager implements DownloaderListener {
     @Override
     public void onError(long jobId, Exception e) {
         Pair<JobType, Downloadable> job = jobs.get(jobId);
-        logger.warn("[" + label + "] Download job of type \""+job.getKey().name()+"\" has failed: "+e.getMessage());
+        logger.warn("[" + label + "] Download job of type \""+job.getKey().name()+"\" has failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
         dropCount--;
     }
 
@@ -252,22 +279,28 @@ public class StreamManager implements DownloaderListener {
         Options options = new Options();
         options.addOption("u", "url", true, "URL of the Master Playlist to download");
         options.addOption("l", "label", true, "Convenient label of the stream");
+        options.addOption("o", "out", true, "Output folder");
         
         CommandLineParser parser = new PosixParser();
         CommandLine line;
         StreamManager manager;
+        Persister persister;
         try {
             line = parser.parse(options, args);
             if (!line.hasOption("url")) {
                 throw new ParseException("Missing parameter url");
             }
+            if (!line.hasOption("out")) {
+                throw new ParseException("Missing parameter out");
+            }
 
+            persister = new FilePersister(new File(line.getOptionValue("out")));
             try {
-                manager = new StreamManager(line.getOptionValue("url"));
+                manager = new StreamManager(persister, line.getOptionValue("url"));
             } catch (URISyntaxException e) {
                 throw new ParseException("Malformed url");
             }
-        } catch (ParseException e) {
+        } catch (Exception e) {
             String footer = "\nError: "+e.getMessage();
             new HelpFormatter().printHelp(400, "<whatever>", "\n", options, footer, true);
             return;

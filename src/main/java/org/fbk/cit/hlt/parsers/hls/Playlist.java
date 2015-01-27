@@ -32,17 +32,17 @@ public abstract class Playlist implements Downloadable {
 
     public void applyTag(Tag tag) throws IllegalTagSequence {
         if (!isValid() && !(tag instanceof OpeningTag)) {
-            throw new IllegalTagSequence();
+            throw new IllegalTagSequence("Missing #EXTM3U");
         }
 
         if (awaitingURI) {
-            throw new IllegalTagSequence();
+            throw new IllegalTagSequence("Didn't expect a tag, awaiting URI");
         }
 
         if (tag.shouldBeUnique()) {
             for (Tag checkTag : tags) {
                 if (checkTag.getClass().equals(tag.getClass())) {
-                    throw new IllegalTagSequence();
+                    throw new IllegalTagSequence(tag.getName()+" should be unique");
                 }
             }
         }

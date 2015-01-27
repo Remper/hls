@@ -196,6 +196,7 @@ public class MediaPlaylist extends Playlist implements Cloneable {
     public MediaPlaylist clone() throws CloneNotSupportedException {
         MediaPlaylist cloned = (MediaPlaylist) super.clone();
         cloned.segments = new ArrayList<>();
+        cloned.tags = new ArrayList<>();
         if (resolution != null) {
             cloned.resolution = resolution.clone();
         }

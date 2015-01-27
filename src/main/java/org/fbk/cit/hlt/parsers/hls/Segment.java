@@ -57,4 +57,8 @@ public class Segment implements Downloadable {
     public void setDiscontinuity(int discontinuity) {
         this.discontinuity = discontinuity;
     }
+
+    public void setUri(String uri) {
+        this.uri = uri;
+    }
 }
