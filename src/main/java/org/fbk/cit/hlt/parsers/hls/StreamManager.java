@@ -1,19 +1,19 @@
 package org.fbk.cit.hlt.parsers.hls;
 
-import javafx.util.Pair;
 import org.apache.commons.cli.*;
-import org.fbk.cit.hlt.parsers.hls.download.*;
-import org.fbk.cit.hlt.parsers.hls.exceptions.IllegalTagSequence;
-import org.fbk.cit.hlt.parsers.hls.persist.FilePersister;
-import org.fbk.cit.hlt.parsers.hls.persist.Persister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.util.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
+
+import org.fbk.cit.hlt.parsers.hls.download.*;
+import org.fbk.cit.hlt.parsers.hls.persist.*;
+import org.fbk.cit.hlt.parsers.hls.exceptions.IllegalTagSequence;
 
 /**
  * Main class for downloading, handling 
@@ -66,7 +66,7 @@ public class StreamManager implements DownloaderListener {
     
     public void start(MediaType type) {
         reset();
-        logger.info("["+label+"] Starting handling stream");
+        info("Starting handling stream");
         
         //Submitting a job for a Master Playlist and waiting until Master Playlist is populated
         submitJob(JobType.MASTER, null, uri);
@@ -74,10 +74,10 @@ public class StreamManager implements DownloaderListener {
         
         //Halting on error
         if (playlist == null) {
-            logger.warn("["+label+"] Master Playlist haven't been downloaded. Halting");
+            warn("Master Playlist haven't been downloaded. Halting");
             return;
         }
-        logger.info("["+label+"] Downloaded the Master Playlist");
+        info("Downloaded the Master Playlist");
         
         //Trying to select the best quality media of the selected type
         MediaPlaylist selectedMedia = null;
@@ -90,7 +90,7 @@ public class StreamManager implements DownloaderListener {
             }
         }
         if (selectedMedia == null) {
-            logger.info("["+label+"] Can't find media of the selected type. Halting");
+            info("Can't find media of the selected type. Halting");
             return;
         }
 
@@ -99,7 +99,7 @@ public class StreamManager implements DownloaderListener {
         try {
             currentMediaUri = new URI(selectedMedia.getBaseURI());
         } catch (URISyntaxException e) {
-            logger.warn("["+label+"] Can't parse media URI. Halting");
+            warn("Can't parse media URI. Halting");
             return;
         }
         
@@ -143,7 +143,13 @@ public class StreamManager implements DownloaderListener {
             
             
             //Adding all the segments to job queue
+            float sleepDuration = 0;
             for (Segment segment : segments) {
+                sleepDuration += segment.getDuration();
+                //Checking if we already processed this segment
+                if (this.segments.containsKey(segment.getSequence())) {
+                    continue;
+                }
                 URI currentUri = null;
                 try {
                     currentUri = new URI(segment.getUri());
@@ -153,7 +159,7 @@ public class StreamManager implements DownloaderListener {
                         segment.setUri(currentUri.toString());
                     }
                 } catch (URISyntaxException e) {
-                    logger.warn("["+label+"] Can't parse URI for segment #"+segment.getSequence());
+                    warn("Can't parse URI for segment #"+segment.getSequence());
                     continue;
                 }
                 this.segments.put(segment.getSequence(), segment);
@@ -161,17 +167,21 @@ public class StreamManager implements DownloaderListener {
             }
 
             //Clearing media, because now it is obsolete
-            long sleepDuration = Math.round(media.getTargetDuration()*500);
             media = null;
             try {
                 //Sleeping for half of the target duration
-                Thread.sleep(sleepDuration);
+                Thread.sleep(Math.round(sleepDuration*500));
             } catch (InterruptedException e) {
                 //Sleep interruption is fine for us
             }
         }
 
-        logger.info("["+label+"] Downloading halted. Downloaded "+downloadedSegments.size()+" segments");
+        info("Downloading halted. Downloaded "+downloadedSegments.size()+" segments");
+        try {
+            persister.serializeSegmentInfo(segments.values());
+        } catch (IOException e) {
+            warn("Failed while saving segment index");
+        }
     }
 
     private void submitJob(JobType type, Downloadable dwn, URI uri) {
@@ -198,11 +208,11 @@ public class StreamManager implements DownloaderListener {
                     try {
                         persister.savePlaylist("master", result);
                     } catch (IOException e) {
-                        logger.warn("[" + label + "] Master Playlist save failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+                        warn("Master Playlist save failed: " + e.getClass().getSimpleName()+" "+e.getMessage());
                     }
                     playlist = parser.parseTwitchMaster(new String(result));
                 } catch (IllegalTagSequence illegalTagSequence) {
-                    logger.warn("[" + label + "] Parsing failed for Master Playlist");
+                    warn("Parsing failed for Master Playlist");
                     dropCount--;
                     return;
                 }
@@ -212,11 +222,11 @@ public class StreamManager implements DownloaderListener {
                     try {
                         persister.savePlaylist("media", result);
                     } catch (IOException e) {
-                        logger.warn("[" + label + "] Media Playlist save failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+                        warn("Media Playlist save failed: " + e.getClass().getSimpleName()+" "+e.getMessage());
                     }
                     media = (MediaPlaylist) parser.parse((Playlist) job.getValue(), new String(result));
                 } catch (IllegalTagSequence illegalTagSequence) {
-                    logger.warn("[" + label + "] Parsing failed for Media Playlist");
+                    warn("Parsing failed for Media Playlist");
                     dropCount--;
                     return;
                 }
@@ -224,11 +234,11 @@ public class StreamManager implements DownloaderListener {
             case SEGMENT:
                 Segment segment = (Segment) job.getValue();
                 downloadedSegments.add(segment.getSequence());
-                logger.info("[" + label + "] downloaded segment #" + segment.getSequence());
+                info("Downloaded segment #" + segment.getSequence());
                 try {
                     persister.saveSegment(segment.getSequence(), result);
                 } catch (IOException e) {
-                    logger.warn("[" + label + "] Segment save failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+                    warn("Segment save failed: " + e.getClass().getSimpleName()+" "+e.getMessage());
                 }
                 break;
         }
@@ -242,7 +252,7 @@ public class StreamManager implements DownloaderListener {
     @Override
     public void onError(long jobId, Exception e) {
         Pair<JobType, Downloadable> job = jobs.get(jobId);
-        logger.warn("[" + label + "] Download job of type \""+job.getKey().name()+"\" has failed: "+e.getClass().getSimpleName()+" "+e.getMessage());
+        warn("Download job of type \"" + job.getKey().name() + "\" has failed: " + e.getClass().getSimpleName()+" "+e.getMessage());
         dropCount--;
     }
 
@@ -272,6 +282,14 @@ public class StreamManager implements DownloaderListener {
         }
         this.downloader = downloader;
         this.downloader.subscribe(this);
+    }
+    
+    private void info(String text) {
+        logger.info("[" + label + "] " + text);
+    }
+    
+    private void warn(String text) {
+        logger.info("[" + label + "] " + text);
     }
     
     public static void main(String args[]) {

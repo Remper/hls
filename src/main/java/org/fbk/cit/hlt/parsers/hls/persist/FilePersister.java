@@ -1,10 +1,12 @@
 package org.fbk.cit.hlt.parsers.hls.persist;
 
 import org.apache.commons.io.IOUtils;
+import org.fbk.cit.hlt.parsers.hls.Segment;
 
 import java.io.*;
 import java.nio.file.FileSystemException;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
 
 /**
@@ -13,6 +15,7 @@ import java.util.Date;
 public class FilePersister implements Persister {
     protected File playlists;
     protected File segments;
+    protected BufferedWriter infoWriter;
     
     /**
      * Folder to which we save all the data
@@ -49,7 +52,36 @@ public class FilePersister implements Persister {
         String name = sequence+".ts";
         saveFile(segments, name, data);
     }
+
+    @Override
+    public void serializeSegmentInfo(Collection<Segment> segments) throws IOException {
+        if (infoWriter == null) {
+            startWritingInfo();
+        }
+        for (Segment segment : segments) {
+            infoWriter.write(segment.getSequence()+","+segment.getTitle()+","+segment.getDuration()+"\r\n");
+        }
+        flush();
+    }
     
+    @Override
+    public void flush() {
+        if (infoWriter == null) {
+            return;
+        }
+        try {
+            infoWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        infoWriter = null;
+    }
+    
+    private void startWritingInfo() throws IOException {
+        infoWriter = new BufferedWriter(new FileWriter(new File(getChildPath(segments.toString(), "index.csv")), true));
+        infoWriter.write("sequence_id,title,duration\r\n");
+    }
+
     private void saveFile(File folder, String name, byte[] data) throws IOException {
         File output = new File(getChildPath(folder.toString(), name));
         try (FileOutputStream stream = new FileOutputStream(output)) {
