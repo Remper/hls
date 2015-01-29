@@ -105,12 +105,17 @@ public class StreamManager implements DownloaderListener {
         
         //Downloading the corresponding Media Playlist
         while (dropCount > 0) {
+            if (Thread.currentThread().isInterrupted()) {
+                info("Received an interruption. Halting");
+                break;
+            }
+            
             long jobId = getNextJobId();
             MediaPlaylist currentMedia = null;
             try {
                 currentMedia = selectedMedia.clone();
             } catch (CloneNotSupportedException e) {
-                logger.warn("[" + label + "] Media Playlist could be cloned. Halting");
+                warn("[" + label + "] Media Playlist could be cloned. Halting");
                 return;
             }
             jobs.put(jobId, new Pair<>(JobType.MEDIA, currentMedia));
