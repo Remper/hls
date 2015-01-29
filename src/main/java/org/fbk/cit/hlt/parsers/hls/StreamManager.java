@@ -320,7 +320,7 @@ public class StreamManager implements DownloaderListener {
             }
         } catch (Exception e) {
             String footer = "\nError: "+e.getMessage();
-            new HelpFormatter().printHelp(400, "<whatever>", "\n", options, footer, true);
+            new HelpFormatter().printHelp(400, "java -jar hls-0.1.jar", "\n", options, footer, true);
             return;
         }
 
