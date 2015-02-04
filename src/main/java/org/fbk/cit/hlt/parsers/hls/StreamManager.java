@@ -115,7 +115,7 @@ public class StreamManager implements DownloaderListener {
             try {
                 currentMedia = selectedMedia.clone();
             } catch (CloneNotSupportedException e) {
-                warn("[" + label + "] Media Playlist could be cloned. Halting");
+                warn("[" + label + "] Media Playlist couldn't be cloned. Halting");
                 return;
             }
             jobs.put(jobId, new Pair<>(JobType.MEDIA, currentMedia));
