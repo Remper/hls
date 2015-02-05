@@ -4,13 +4,13 @@ import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javafx.util.Pair;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 
+import org.fbk.cit.hlt.parsers.hls.util.Pair;
 import org.fbk.cit.hlt.parsers.hls.download.*;
 import org.fbk.cit.hlt.parsers.hls.persist.*;
 import org.fbk.cit.hlt.parsers.hls.exceptions.IllegalTagSequence;
